@@ -1928,7 +1928,9 @@ async def main():
                 print("How can Janus Pro assist you today?")
                 print("1. General question or task")
                 print("2. Quick text summarization")
-                print("3. Back to main menu")
+                print("3. Cost-saving hybrid mode (AWS + Janus)")
+                print("4. View Janus usage statistics")
+                print("5. Back to main menu")
                 
                 # Check if Janus Pro agent is available
                 janus_agent = next((a for a in orchestrator.agents if a.name.lower().startswith("janus")), None)
@@ -1936,7 +1938,7 @@ async def main():
                     print("Janus Pro agent is not available. Make sure you have set the AI21_API_KEY environment variable.")
                     continue
                 
-                janus_choice = input("Your choice (1-3): ")
+                janus_choice = input("Your choice (1-5): ")
                 
                 if janus_choice == '1':
                     user_input = input("Your question for Janus Pro: ")
@@ -1983,6 +1985,65 @@ async def main():
                     
                     print("\n🧠 JANUS PRO 7B SUMMARY 🧠")
                     print(summary)
+                    
+                elif janus_choice == '3':
+                    user_input = input("Your question (I'll choose the most cost-effective agent): ")
+                    print("\nAnalyzing your request to determine the most cost-effective agent...")
+                    
+                    # Determine if Janus or AWS should handle this
+                    use_janus = janus_agent.should_use_janus(user_input)
+                    
+                    if use_janus:
+                        print("Using Janus Pro 7B for fast processing...")
+                        response = await process_with_agent("janus", user_input, user_id, session_id)
+                        model_used = "Janus Pro 7B"
+                    else:
+                        print("Using AWS Bedrock for complex processing to optimize costs...")
+                        # Choose an appropriate AWS agent based on the content
+                        if any(word in user_input.lower() for word in ["life", "advice", "help", "wisdom"]):
+                            agent_type = "wisdom"
+                        elif any(word in user_input.lower() for word in ["tech", "code", "programming", "computer"]):
+                            agent_type = "tech"
+                        elif any(word in user_input.lower() for word in ["creative", "write", "story", "rap"]):
+                            agent_type = "creative"
+                        else:
+                            agent_type = "research"  # Default to research for general questions
+                            
+                        response = await process_with_agent(agent_type, user_input, user_id, session_id)
+                        model_used = f"AWS Bedrock ({agent_type.capitalize()} Agent)"
+                    
+                    # Add messages to conversation
+                    context_manager.add_message(conv_id, "user", user_input)
+                    context_manager.add_message(conv_id, "assistant", response)
+                    
+                    interaction = {"Request": user_input, "Response": response, "Model": model_used}
+                    log_session("Hybrid Mode", interaction)
+                    
+                    # Log domain activity
+                    growth_engine.log_activity(
+                        user_id, 
+                        "hybrid_interaction",
+                        ["cognitive"],
+                        f"Used hybrid mode ({model_used}): {user_input[:30]}..."
+                    )
+                    
+                    print(f"\n🧠 {model_used.upper()} RESPONSE 🧠")
+                    print(response)
+                    
+                elif janus_choice == '4':
+                    # Display Janus usage statistics
+                    print("\n📊 JANUS PRO 7B USAGE STATISTICS 📊")
+                    print(f"Total API calls this session: {janus_agent.monthly_call_count}")
+                    print(f"Estimated cost: ${janus_agent.call_cost_estimate:.4f}")
+                    
+                    # Show some cost-saving tips
+                    print("\nCost-saving tips:")
+                    print("- Use 'Hybrid mode' to automatically route to the most cost-efficient agent")
+                    print("- Reserve Janus Pro for quick questions and summaries")
+                    print("- Use AWS Bedrock agents for complex, detailed analysis")
+                    print("- Monitor your usage regularly to optimize costs")
+                    
+                    input("\nPress Enter to return to the menu...")
                 
             elif choice == '15':
                 # Log session end
@@ -2026,6 +2087,10 @@ class JanusProAgent(JAYAgent):
         # Initialize AI21 client
         ai21.api_key = api_key
         
+        # Track API usage for cost management
+        self.monthly_call_count = 0
+        self.call_cost_estimate = 0.0  # Estimated cost tracking in USD
+        
         # Custom personality prompt for Janus Pro
         self.personality_prompt = """You are JAY.AI powered by Janus Pro 7B, a fast and efficient AI assistant.
         You specialize in providing quick, concise, and accurate responses.
@@ -2067,6 +2132,11 @@ class JanusProAgent(JAYAgent):
             )
             
             generated_text = response.completions[0].data.text
+            
+            # Track API usage (estimated tokens)
+            input_tokens = len(prompt.split())
+            output_tokens = len(generated_text.split())
+            self.track_usage(input_tokens + output_tokens)
             
             # Stylize the response
             stylized_text = self.stylize_response(generated_text)
@@ -2122,6 +2192,11 @@ class JanusProAgent(JAYAgent):
             )
             
             response_text = response.completions[0].data.text.strip()
+            
+            # Track API usage (estimated tokens)
+            input_tokens = len(full_prompt.split())
+            output_tokens = len(response_text.split())
+            self.track_usage(input_tokens + output_tokens)
             
             # Stylize the response to match JAY.AI's tone
             stylized_response = self.stylize_response(response_text)
@@ -2184,6 +2259,58 @@ class JanusProAgent(JAYAgent):
         
         return stylized_text
      
+    def should_use_janus(self, user_input: str) -> bool:
+        """
+        Determines if a request should use Janus Pro (paid) or AWS Bedrock (included).
+        Makes cost-effective decisions based on input complexity and other factors.
+        
+        Args:
+            user_input: The user's input text
+            
+        Returns:
+            bool: True if Janus should be used, False if AWS Bedrock is more appropriate
+        """
+        # Simple length-based routing
+        # Use AWS Bedrock for complex queries to save Janus costs
+        input_length = len(user_input.split())
+        
+        # These types of questions are ideal for Janus (fast, efficient)
+        janus_keywords = [
+            "summarize", "summary", "quick", "short", "brief", "recap",
+            "simple", "explain", "tldr", "overview", "fast"
+        ]
+        
+        # These suggest complex reasoning better handled by AWS Bedrock
+        aws_keywords = [
+            "complex", "analyze", "deep dive", "detailed", "comprehensive",
+            "compare", "contrast", "elaborate", "thorough", "research"
+        ]
+        
+        # Check for keyword matches
+        has_janus_keywords = any(keyword in user_input.lower() for keyword in janus_keywords)
+        has_aws_keywords = any(keyword in user_input.lower() for keyword in aws_keywords)
+        
+        # Decision logic
+        if has_janus_keywords and not has_aws_keywords:
+            return True  # Use Janus for quick/summary requests
+        elif has_aws_keywords:
+            return False  # Use AWS for complex/detailed requests
+        elif input_length <= 30:  # Short questions are good for Janus
+            return True
+        else:
+            # For everything else, prefer AWS to save costs
+            return False
+     
+    def track_usage(self, tokens_used):
+        """
+        Track Janus API usage for cost estimation.
+        
+        Args:
+            tokens_used: Estimated number of tokens used
+        """
+        self.monthly_call_count += 1
+        self.call_cost_estimate += (tokens_used / 1000) * 0.01  # Assumed $0.01 per 1K tokens
+     
     async def quick_summary(self, text: str, max_length: int = 150) -> str:
         """
         Generate a quick summary of text using Janus Pro's speed.
@@ -2222,6 +2349,11 @@ class JanusProAgent(JAYAgent):
             )
             
             summary_text = response.completions[0].data.text.strip()
+            
+            # Track API usage (estimated tokens)
+            input_tokens = len(prompt.split())
+            output_tokens = len(summary_text.split())
+            self.track_usage(input_tokens + output_tokens)
             
             # No need to stylize since we asked for JAY.AI style in the prompt
             return summary_text
