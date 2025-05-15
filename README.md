@@ -1,162 +1,84 @@
-# JAY.AI - Personal Growth Assistant 🚀
+# JAY.AI - Interactive AI Assistant
 
-## Overview
-JAY.AI is an intelligent personal growth assistant that combines specialized AI agents with a comprehensive growth tracking system. It delivers wisdom, creative assistance, and personalized development plans using a unique, engaging communication style.
+An interactive AI assistant that provides life wisdom, creative writing assistance, and motivational challenges using AWS Bedrock, AI21's Janus Pro 7B model, and Agent Squad.
 
-## System Architecture 🏗️
+## Setup Instructions
 
-JAY.AI consists of three core components:
+1. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-1. **Agent System** - Specialized AI agents with distinct expertise areas
-2. **Growth Engine** - Comprehensive personal development tracking system
-3. **Interaction Management** - Conversation handling and user session management
+2. **AWS Setup**
+   - Create an AWS account if you don't have one
+   - Install and configure AWS CLI:
+     ```bash
+     pip install awscli
+     aws configure
+     ```
+   - Enter your AWS credentials when prompted:
+     - AWS Access Key ID
+     - AWS Secret Access Key
+     - Default region (e.g., us-east-1)
+     - Default output format (json)
 
-### Key Components
+3. **AWS Bedrock Access**
+   - Go to AWS Console
+   - Navigate to Amazon Bedrock
+   - Request access to the following models:
+     - Anthropic Claude 3 Sonnet
+     - Other models you plan to use
 
-#### 1. Growth Engine 📈
+4. **AI21 Janus Pro 7B Setup (Optional)**
+   - Create an account at [AI21 Studio](https://studio.ai21.com/)
+   - Generate an API key in your account settings
+   - Create a `.env` file in the root directory (see `env.example`)
+   - Add your AI21 API key to the `.env` file:
+     ```
+     AI21_API_KEY=your_api_key_here
+     ```
 
-The `GrowthEngine` class manages user growth across 8 life domains:
-- Cognitive, Creative, Physical, Emotional
-- Social, Professional, Financial, Spiritual
+5. **Run the Application**
+   ```bash
+   python jay_ai.py
+   ```
 
-Features:
-- XP and leveling mechanics for each domain
-- Streak tracking for consistency (3, 7, 14, 30-day milestones)
-- Goal management with progress tracking
-- Personalized challenges based on user's profile
-- Insight generation from growth patterns
+## Features
 
-```python
-# Core data structure for user growth
-self.growth_data = {
-    "users": {
-        "user_id": {
-            "domains": {domain: {"level": 1, "xp": 0} for domain in self.growth_domains},
-            "streaks": {"current": 0, "longest": 0, "last_activity": None},
-            "activity_log": []
-        }
-    }
-}
-```
+- Life Wisdom: Get personalized advice and wisdom
+- Big Decision Coach: Help with making important decisions
+- Creative Partner: Generate rap lyrics and creative content
+- Push Me, JAY: Get motivational challenges
+- Janus Pro 7B Agent: Fast, efficient responses powered by AI21's Janus Pro model
 
-#### 2. JAY Agent System 🤖
+## File Structure
 
-The `JAYAgent` class extends the AWS BedrockLLMAgent with:
-- Personality traits and custom language style
-- Context-aware processing
-- Domain-specific expertise
-- Collaboration capabilities
+- `jay_ai.py`: Main application file
+- `jay_history.json`: Stores user interaction history
+- `jay_sessions.txt`: Logs detailed session information
+- `requirements.txt`: Python dependencies
+- `.env`: Environment variables (API keys, etc.)
 
-Agent types:
-- Wisdom, Creative, Tech, Research
-- Strategy, Wellness, Relationship, Financial
+## Troubleshooting
 
-```python
-# Example of specialized agent processing
-async def process_with_context(self, user_input, user_id, session_id, agent_type):
-    # Get conversation history and user growth profile
-    # Apply personality traits and language style
-    # Process input and track growth
-```
+1. **AWS Credentials Issues**
+   - Verify AWS credentials are properly configured
+   - Check if you have access to AWS Bedrock
+   - Ensure your region supports the required models
 
-#### 3. Collaboration System 🤝
+2. **Model Access Issues**
+   - Request access to required models in AWS Bedrock
+   - Verify model IDs in the code match available models
 
-Enables multiple agents to work together through:
-- General collaboration for complex queries
-- Specialized collaboration patterns:
-  - Life Planning (Strategy + Wisdom + Wellness)
-  - Business Ventures (Strategy + Financial + Tech)
-  - Personal Growth (Wisdom + Wellness + Relationship)
-  - Creative Projects (Creative + Tech + Strategy)
-  - Financial Wellness (Financial + Wellness + Wisdom)
+3. **Dependency Issues**
+   - Ensure all requirements are installed
+   - Check Python version (3.11+ recommended)
 
-```python
-# Collaboration detection
-if any(keyword in user_input.lower() for keyword in ["complex", "collaborate", "team"]):
-    # Route to collaborative processing
-```
+4. **Janus Pro 7B Issues**
+   - Verify your AI21 API key is correctly set in the `.env` file
+   - Check if you have remaining credits in your AI21 account
+   - Ensure you have proper internet connectivity to access the AI21 API
 
-## Data Flow Diagram
+## Support
 
-```
-User Input → Agent Routing → Processing → Response
-     ↑                         ↓
-     └─── Growth Engine ←── Activity Logging
-```
-
-## Key Features ✨
-
-1. **Personalized Growth Plans** - Tailored development plans based on user's current levels
-
-2. **Challenge System** - Adaptive challenges targeting growth areas
-
-3. **Goal Tracking** - Milestone-based goal management with progress visualization
-
-4. **Streak Mechanics** - Consistency tracking with achievement levels
-
-5. **Multi-Agent Collaboration** - Combined expertise for complex problems
-
-6. **Growth Analytics** - Pattern identification and personalized insights
-
-7. **Natural Language Style** - Engaging, authentic communication style
-
-## Persistence
-
-JAY.AI maintains several data stores:
-- `jay_growth_data.json` - Domain levels, XP, streaks
-- `jay_user_goals.json` - Goal tracking and progress
-- `jay_user_insights.json` - Generated insights and recommendations
-- `jay_history.json` - Interaction history
-- `jay_sessions.txt` - Session logs
-
-## AWS Integration 🔄
-
-JAY.AI leverages AWS services:
-- **Bedrock Runtime** - Hosts Claude 3 Sonnet models
-- **Agent Squad** - Orchestrates multiple agent interactions
-
-```python
-bedrock_client = boto3.client('bedrock-runtime', config=Config(
-    connect_timeout=300,
-    read_timeout=300,
-    retries={'max_attempts': 3}
-))
-```
-
-## Extension Points 🔌
-
-JAY.AI can be extended through:
-1. Adding new specialized agents
-2. Creating additional collaboration patterns
-3. Expanding growth domains
-4. Adding new visualization methods
-5. Implementing external integrations (calendars, task managers)
-
-## Setup and Installation
-
-### Prerequisites
-- Python 3.8+
-- AWS account with Bedrock access
-- Agent Squad library
-
-### Installation
-1. Clone this repository
-2. Install dependencies: `pip install -r requirements.txt`
-3. Configure AWS credentials
-4. Run the application: `python src/jay_ai.py`
-
-## Usage
-
-```
-python src/jay_ai.py
-```
-
-The application provides a text-based interface with the following options:
-- Life Wisdom
-- Creative Assistance
-- Personal Challenges
-- Growth Dashboard
-- and more...
-
-## License
-[MIT License](LICENSE) 
+For issues or questions, please open an issue in the repository. 
