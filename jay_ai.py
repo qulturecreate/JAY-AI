@@ -1926,6 +1926,9 @@ async def main():
             elif choice == '14':
                 print("\n[Janus Pro 7B Agent 🧠]")
                 print("How can Janus Pro assist you today?")
+                print("1. General question or task")
+                print("2. Quick text summarization")
+                print("3. Back to main menu")
                 
                 # Check if Janus Pro agent is available
                 janus_agent = next((a for a in orchestrator.agents if a.name.lower().startswith("janus")), None)
@@ -1933,27 +1936,53 @@ async def main():
                     print("Janus Pro agent is not available. Make sure you have set the AI21_API_KEY environment variable.")
                     continue
                 
-                user_input = input("Your question for Janus Pro: ")
-                print("\nProcessing with Janus Pro 7B... This is usually faster than other models!")
-                response = await process_with_agent("janus", user_input, user_id, session_id)
+                janus_choice = input("Your choice (1-3): ")
                 
-                # Add messages to conversation
-                context_manager.add_message(conv_id, "user", user_input)
-                context_manager.add_message(conv_id, "assistant", response)
+                if janus_choice == '1':
+                    user_input = input("Your question for Janus Pro: ")
+                    print("\nProcessing with Janus Pro 7B... This is usually faster than other models!")
+                    response = await process_with_agent("janus", user_input, user_id, session_id)
+                    
+                    # Add messages to conversation
+                    context_manager.add_message(conv_id, "user", user_input)
+                    context_manager.add_message(conv_id, "assistant", response)
+                    
+                    interaction = {"Request": user_input, "Response": response}
+                    log_session("Janus Pro 7B Agent", interaction)
+                    
+                    # Log domain activity
+                    growth_engine.log_activity(
+                        user_id, 
+                        "janus_pro_interaction",
+                        ["cognitive", "creative"],
+                        f"Interacted with Janus Pro 7B: {user_input[:30]}..."
+                    )
+                    
+                    print("\n🧠 JANUS PRO 7B RESPONSE 🧠")
+                    print(response)
                 
-                interaction = {"Request": user_input, "Response": response}
-                log_session("Janus Pro 7B Agent", interaction)
-                
-                # Log domain activity
-                growth_engine.log_activity(
-                    user_id, 
-                    "janus_pro_interaction",
-                    ["cognitive", "creative"],
-                    f"Interacted with Janus Pro 7B: {user_input[:30]}..."
-                )
-                
-                print("\n🧠 JANUS PRO 7B RESPONSE 🧠")
-                print(response)
+                elif janus_choice == '2':
+                    text_to_summarize = input("Enter or paste the text you want to summarize: ")
+                    print("\nGenerating quick summary with Janus Pro 7B...")
+                    
+                    summary = await janus_agent.quick_summary(text_to_summarize)
+                    
+                    # Add to conversation history
+                    summary_request = f"Summarize this text: {text_to_summarize[:50]}..."
+                    context_manager.add_message(conv_id, "user", summary_request)
+                    context_manager.add_message(conv_id, "assistant", summary)
+                    
+                    # Log activity
+                    log_session("Janus Pro 7B Summary", {"Text": text_to_summarize[:100] + "...", "Summary": summary})
+                    growth_engine.log_activity(
+                        user_id,
+                        "janus_summary",
+                        ["cognitive"],
+                        "Generated text summary with Janus Pro 7B"
+                    )
+                    
+                    print("\n🧠 JANUS PRO 7B SUMMARY 🧠")
+                    print(summary)
                 
             elif choice == '15':
                 # Log session end
@@ -1996,6 +2025,20 @@ class JanusProAgent(JAYAgent):
         self.model = "janus-pro-7b"
         # Initialize AI21 client
         ai21.api_key = api_key
+        
+        # Custom personality prompt for Janus Pro
+        self.personality_prompt = """You are JAY.AI powered by Janus Pro 7B, a fast and efficient AI assistant.
+        You specialize in providing quick, concise, and accurate responses.
+        You maintain JAY.AI's friendly and motivational tone, but optimize for clarity and efficiency.
+        Remember: Your strength is in giving direct, actionable insights without unnecessary explanation."""
+        
+        # Add Janus-specific language style patterns
+        self.janus_style_patterns = {
+            "greetings": ["What's good, King?", "Aight, let's get it", "Yo, I got you", "Let me break this down real quick"],
+            "transitions": ["Moving to the next point", "Now check this out", "Here's the deal", "Let's shift gears"],
+            "affirmations": ["You got this", "That's a power move", "Keep leveling up", "That's legendary"],
+            "closings": ["Stay winning", "Go be legendary", "Keep pushing", "Let's make these moves"]
+        }
     
     async def process(self, user_input: str) -> AgentStreamResponse:
         """
@@ -2016,14 +2059,21 @@ class JanusProAgent(JAYAgent):
                 prompt=prompt,
                 model=self.model,
                 max_tokens=800,
-                temperature=0.7
+                temperature=0.7,
+                top_p=0.9,
+                top_k=40,
+                presence_penalty=0.1,
+                frequency_penalty=0.2
             )
             
             generated_text = response.completions[0].data.text
             
+            # Stylize the response
+            stylized_text = self.stylize_response(generated_text)
+            
             # Create and return an AgentStreamResponse
             return AgentStreamResponse(
-                generated_content=generated_text,
+                generated_content=stylized_text,
                 is_done=True
             )
         except Exception as e:
@@ -2064,20 +2114,121 @@ class JanusProAgent(JAYAgent):
                 prompt=full_prompt,
                 model=self.model,
                 max_tokens=800,
-                temperature=0.7
+                temperature=0.7,
+                top_p=0.9,
+                top_k=40,
+                presence_penalty=0.1,
+                frequency_penalty=0.2
             )
             
             response_text = response.completions[0].data.text.strip()
             
+            # Stylize the response to match JAY.AI's tone
+            stylized_response = self.stylize_response(response_text)
+            
             # Update conversation context
             self.context_manager.add_message(user_id, session_id, "user", user_input)
-            self.context_manager.add_message(user_id, session_id, "assistant", response_text)
+            self.context_manager.add_message(user_id, session_id, "assistant", stylized_response)
             
-            return response_text
+            return stylized_response
         except Exception as e:
             error_msg = f"Error processing with Janus Pro: {str(e)}"
             print(error_msg)
             return f"I apologize, but I encountered an error: {error_msg}"
+            
+    def stylize_response(self, response_text):
+        """
+        Add JAY.AI's natural language style elements to Janus responses.
+        
+        Args:
+            response_text: The raw response text from Janus
+            
+        Returns:
+            str: The stylized response with JAY.AI language patterns
+        """
+        import random
+        import re
+        
+        # Check if the response already has JAY.AI style elements
+        has_style = any(pattern in response_text.lower() for pattern in 
+                        ["king", "legendary", "aight", "yo", "what's good", "level up"])
+        
+        if has_style:
+            # Already has style elements, just return as is
+            return response_text
+            
+        # Add a greeting if this appears to be the start of a response
+        if not re.match(r'^(Well|So|I think|However|Actually)', response_text):
+            greeting = random.choice(self.janus_style_patterns["greetings"])
+            response_text = f"{greeting} {response_text}"
+        
+        # For longer responses, add transition phrases
+        sentences = re.split(r'(?<=[.!?])\s+', response_text)
+        if len(sentences) > 3:
+            # Insert a transition phrase at a natural break point
+            insert_point = len(sentences) // 2
+            transition = random.choice(self.janus_style_patterns["transitions"])
+            sentences.insert(insert_point, transition)
+            
+        # Add an affirmation or closing for appropriate content
+        if len(sentences) > 1 and not re.search(r'(thanks|thank you|appreciate)', response_text.lower()):
+            if random.random() < 0.7:  # 70% chance to add closing
+                closing = random.choice(self.janus_style_patterns["closings"])
+                sentences.append(closing)
+            else:
+                affirmation = random.choice(self.janus_style_patterns["affirmations"])
+                sentences.append(affirmation)
+                
+        # Reassemble the response
+        stylized_text = ' '.join(sentences)
+        
+        return stylized_text
+     
+    async def quick_summary(self, text: str, max_length: int = 150) -> str:
+        """
+        Generate a quick summary of text using Janus Pro's speed.
+        This specialized method leverages Janus Pro's efficiency for summarization.
+        
+        Args:
+            text: The text to summarize
+            max_length: Maximum length of the summary in words
+            
+        Returns:
+            str: Concise summary in JAY.AI style
+        """
+        prompt = f"""Summarize this text in JAY.AI style - concise, direct, and motivational:
+        
+        {text}
+        
+        Create a summary that:
+        1. Captures the key points in under {max_length} words
+        2. Uses JAY.AI's natural language style
+        3. Is direct and action-oriented
+        4. Maintains only the most important information
+        
+        Summary:"""
+        
+        try:
+            # Call Janus Pro model with summarization-specific parameters
+            response = Janus.complete(
+                prompt=prompt,
+                model=self.model,
+                max_tokens=200,  # Shorter for summaries
+                temperature=0.5,  # More focused for summaries
+                top_p=0.8,
+                top_k=30,
+                presence_penalty=0.2,  # Avoid repetition
+                frequency_penalty=0.3
+            )
+            
+            summary_text = response.completions[0].data.text.strip()
+            
+            # No need to stylize since we asked for JAY.AI style in the prompt
+            return summary_text
+        except Exception as e:
+            error_msg = f"Error generating summary with Janus Pro: {str(e)}"
+            print(error_msg)
+            return f"Couldn't summarize that. {error_msg}"
 
 if __name__ == "__main__":
     try:
