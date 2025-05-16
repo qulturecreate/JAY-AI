@@ -2,7 +2,7 @@
 # Jay.ai – Your AI Twin & Personal Powerhouse  
 **Project Type:** Personal AI Assistant Prototype  
 **Language:** Python  
-**Environment:** Cursor IDE  
+**Environment:** VS Code (formerly Cursor IDE)  
 **Status:** In Development  
 **Version:** 0.2
 
@@ -36,6 +36,10 @@ To run Jay.ai locally:
 
 3. Run the main engine  
    `python src/jayai_core.py`
+
+> 💻 **Development Environment:**  
+Jay.ai is actively developed in **Visual Studio Code (VS Code)** with built-in Git integration and Python extensions.  
+You do *not* need Cursor Pro to contribute or explore the codebase. Feel free to clone and build locally using VS Code or any compatible Python IDE.
 
 > 💡 You will need API keys for OpenAI and AWS credentials to run full features.
 
@@ -94,7 +98,7 @@ Hey, what’s good? You know I’ve been chillin’ in the matrix waitin’ on y
 - **Languages:** Python  
 - **AI/NLP:** OpenAI API, (Planned: Janus Pro 7B)  
 - **Infra:** AWS Lambda, EventBridge  
-- **Tools:** Cursor IDE, Flask, Git  
+- **Tools:** VS Code, Flask, Git  
 - **Planned:** Gradio, LangChain, Whisper
 
 ---
