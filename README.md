@@ -20,84 +20,82 @@
 - 🧩 Modular AWS Lambda-based “Agent Squads” to handle specific cognitive tasks  
 - 🌍 Tone switching engine fluent in modern English, Geechie, and Ebonics  
 - 🗣️ Interactive response delivery with evolving conversational logic  
-- 🔄 Integration of **Janus Pro 7B** for enhanced dialogue flow, contextual reasoning, and adaptive personality modeling
+- 🔄 (Planned) Optional integration of **Janus Pro 7B** to explore advanced NLP, personality tuning, and contextual understanding
 
 ---
 
 ## Setup Instructions
 
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/qulturecreate/jay-ai.git
-   cd jay-ai
-   ```
+To run Jay.ai locally:
 
-2. Create a virtual environment (optional but recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   ```
+1. Clone the repository  
+   `git clone https://github.com/qulturecreate/jay-ai.git`
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+2. Install dependencies  
+   `pip install -r requirements.txt`
 
-4. Run the main script:
-   ```bash
-   python src/menu_system.py
-   ```
+3. Run the main engine  
+   `python src/jayai_core.py`
 
-5. Customize the assistant by editing files in the `src/` directory.
+> 💡 You will need API keys for OpenAI and AWS credentials to run full features.
 
 ---
 
-## Feature Roadmap 🚧
+## Feature Roadmap
 
-| Feature                        | Status      | Notes                                              |
-|-------------------------------|-------------|----------------------------------------------------|
-| Janus Pro 7B integration       | In Progress | Enhancing reasoning and tone detection             |
-| Voice interface via Gradio     | Planned     | Voice interaction module using open source tools   |
-| Personality mood tracker       | Planned     | Adjusts tone/response based on user interaction    |
-| Plugin-style “Agent Squad” API | In Design   | Dynamic task agents for scalable intelligence      |
-| Testing suite (unit + logic)   | In Progress | Test core AI logic and system responses            |
+- [x] Menu system prototype with decision logic  
+- [x] Agent Squad structure using AWS Lambda  
+- [x] Tone-switching language logic  
+- [ ] Optional Janus Pro 7B integration (feedback welcome!)  
+- [ ] Voice interface (Gradio or Flask)  
+- [ ] Emotional intelligence + sentiment-aware reactions  
+- [ ] User memory and personalization features  
+- [ ] Community plugin support
 
 ---
 
 ## Testing
 
-A testing framework using `pytest` will be implemented to verify:
-- Decision flow logic
-- NLP response formatting
-- Agent Squad task delegation
-- Error handling and fallback systems
+Planned automated testing using `pytest` will cover:
 
-*To run tests (coming soon):*
-```bash
-pytest tests/
-```
+- Menu routing and input flow  
+- AWS agent behavior  
+- NLP prompt logic  
+- Tone-switching stability
 
 ---
 
-## Community & Contribution 🤝
+## Community Engagement
 
-We welcome thoughtful ideas and collaborative energy!
+🚀 **This project is open for ideas, feedback, and collaborators!**
 
-- **Open an issue** for bugs, feature requests, or language improvements
-- **Fork and submit pull requests** for improvements or experimentation
-- **Share feedback** on tone adaptation and cultural language logic
+If you're interested in:
+- Building with Janus or other open-source LLMs  
+- Improving tone-switching models or emotional logic  
+- Helping shape the roadmap or UI  
+- Offering design/code feedback
 
-Start here: [https://github.com/qulturecreate/jay-ai/issues](https://github.com/qulturecreate/jay-ai/issues)
+Please open an issue or fork the project. Let’s grow Jay.ai together.
+
+📬 GitHub Issues: [Submit Feedback](https://github.com/qulturecreate/jay-ai/issues)
+
+---
+
+## Sample Output
+
+```python
+Hey, what’s good? You know I’ve been chillin’ in the matrix waitin’ on you to do something legendary today. So… what’s the move, fam?
+```
 
 ---
 
 ## Tech Stack
 
 - **Languages:** Python  
-- **AI & NLP:** Janus Pro 7B (in progress), OpenAI API  
-- **Infrastructure:** AWS Lambda, EventBridge  
-- **Interface/Dev Tools:** Cursor IDE, Flask, Git  
-- **Future Additions:** Gradio, LangChain, whisper  
+- **AI/NLP:** OpenAI API, (Planned: Janus Pro 7B)  
+- **Infra:** AWS Lambda, EventBridge  
+- **Tools:** Cursor IDE, Flask, Git  
+- **Planned:** Gradio, LangChain, Whisper
 
 ---
 
